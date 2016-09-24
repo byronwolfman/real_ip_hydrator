@@ -2,7 +2,7 @@
 
 ## What is this?
 
-I'm prepping a new webhost to be served behind CloudFlare, who advise that you will need to implement the `real_ip` module if you use nginx and want to know where your traffic is really coming from. The method to do so is described here:
+I'm prepping a new webhost to be served behind CloudFlare. CloudFlare advises that you will need to implement the `real_ip` module if you use nginx and want to know where your traffic is really coming from. The method to do so is described here:
 
 https://support.cloudflare.com/hc/en-us/articles/200170706-How-do-I-restore-original-visitor-IP-with-Nginx-
 
@@ -16,7 +16,7 @@ It's unclear what the frequency of "regularly" is, but clearly we need to moniro
 
 Hopefully the script is easy to parse, but just in case it isn't, here is what it does:
 
-1. Downloads a list return-delimited IPv4 and IPv6 addresses from cloudflare
+1. Downloads a list of return-delimited IPv4 and IPv6 addresses from CloudFlare
 1. Cleans `/etc/nginx/real_ip.conf`
 1. Validates each IP address and writes valid ones into `/etc/nginx/real_ip.conf`
 1. Reloads nginx via `/bin/systemctl`

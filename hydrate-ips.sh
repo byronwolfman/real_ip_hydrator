@@ -14,7 +14,7 @@ function showusage {
 # Convenience function to log and/or output to stdout
 function logput {
   /usr/bin/logger "${1}" --id --tag "${MYNAME}"
-  if [ $VERBOSE -eq 1 ]; then
+  if [ -n "$VERBOSE" ]; then
     echo "${MYNAME}[${$}]: ${1}"
   fi
 }

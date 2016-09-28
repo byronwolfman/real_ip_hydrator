@@ -2,11 +2,11 @@
 
 ## What is this?
 
-I'm prepping a new webhost to be served behind CloudFlare. CloudFlare advises that you will need to implement the `real_ip` module if you use nginx and want to know where your traffic is really coming from. The method to do so is described here:
+I'm prepping a new webhost to be served behind Cloudflare. Cloudflare advises that you will need to implement the `real_ip` module if you use nginx and want to know where your traffic is really coming from. The method to do so is described here:
 
 https://support.cloudflare.com/hc/en-us/articles/200170706-How-do-I-restore-original-visitor-IP-with-Nginx-
 
-Below the list of CloudFlare IP addresses is the following caveat:
+Below the list of Cloudflare IP addresses is the following caveat:
 
 > NB: That list of prefixes needs to be updated regularly
 
@@ -16,7 +16,7 @@ It's unclear what the frequency of "regularly" is, but clearly we need to monito
 
 Hopefully the script is easy to parse, but just in case it isn't, here is what it does:
 
-1. Downloads a list of return-delimited IPv4 and IPv6 addresses from CloudFlare
+1. Downloads a list of return-delimited IPv4 and IPv6 addresses from Cloudflare
 1. Cleans `/etc/nginx/real_ip.conf`
 1. Validates each IP address and writes valid ones into `/etc/nginx/real_ip.conf`
 1. Reloads nginx via `/bin/systemctl`
@@ -39,7 +39,7 @@ This script makes certain assumptions which may cause you grief:
 - The script cleans `/etc/nginx/real_ip.conf` before validating IP addresses
   - Ideally the script should abort if no IPv4 or IPv6 addresses are found
 - The script assumes a return-delimited list
-- The script assumes you are using CloudFlare
+- The script assumes you are using Cloudflare
 - The script assumes you are using systemd
 - The script assumes it will be run under a user that has permission to reload nginx
 - The script will not attempt to validate your nginx configuration before reloading

@@ -52,6 +52,13 @@ for opt in "$@"; do
   esac
 done
 
+# Get determine if /etc/nginx/real_ip.conf exists, and get md5 if so
+if [ -f /etc/nginx/real_ip.conf ]; then
+  ORIGINAL_MD5=$(/usr/bin/md5sum /etc/nginx/real_ip.conf)
+else
+  ORIGINAL_MD5='NOMD5SUM'
+fi
+
 # Get cloudflare IP addresses
 logput "Downloading CloudFlare IP adddresses"
 IPV4=$(curl -Ss https://www.cloudflare.com/ips-v4)
@@ -87,6 +94,11 @@ logput "Wrote out ${nIPV6VALID} ipv6 addresses of ${nIPV6FOUND} candidates"
 echo -e '\nreal_ip_header X-Forwarded-For;' >> /etc/nginx/real_ip.conf
 logput "Finished overwrite"
 
-# Reload nginx
-logput "Reloading nginx"
-sudo /bin/systemctl reload nginx
+# Get md5 of /etc/nginx/real_ip.conf to see if rehydrating it has changed it
+NEW_MD5=$(/usr/bin/md5sum /etc/nginx/real_ip.conf)
+if [ "$ORIGINAL_MD5" != "$NEW_MD5" ]; then
+  logput "Reloading nginx"
+  sudo /bin/systemctl reload nginx
+else
+  logput "/etc/nginx/real_ip.conf unchanged after rehydrating"
+fi

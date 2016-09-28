@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Download list of IPv4 and IPv6 addresses from Cloudflare and write them into
+# /etc/nginx/real_ip.conf, then reload nginx if changes have been made.
+# IPv4 regex found via http://www.regexpal.com/93987 on 2016-09-24
+# IPv6 regex found via http://www.regexpal.com/93988 on 2016-09-24
+
 export PATH=/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin
 export MYNAME=$0
 
@@ -17,22 +22,6 @@ function logput {
   if [ -n "$VERBOSE" ]; then
     echo "${MYNAME}[${$}]: ${1}"
   fi
-}
-
-# Validate that a given line is an IPV4 CIDR and nothing else, i.e. n.n.n.n/n
-# Via http://www.regexpal.com/93987 on 2016-09-24
-function validate_ipv4 {
-  echo $1 | grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$' > /dev/null
-  RETVAL=$?
-  echo $RETVAL
-}
-
-# Validate that a given line is an IPV6 address or CIDR and nothing else, i.e. n:n:n:n:n:n:n:n/n or n:n::/n
-# Via http://www.regexpal.com/93988 on 2016-09-24
-function validate_ipv6 {
-  echo $1 | grep -E '^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?$' > /dev/null
-  RETVAL=$?
-  echo $RETVAL
 }
 
 # Parse options
@@ -59,10 +48,10 @@ else
   ORIGINAL_MD5='NOMD5SUM'
 fi
 
-# Get cloudflare IP addresses
+# Get cloudflare IP addresses and grep for IPv4/IPv6 objects
 logput "Downloading CloudFlare IP adddresses"
-IPV4=$(curl -Ss https://www.cloudflare.com/ips-v4)
-IPV6=$(curl -Ss https://www.cloudflare.com/ips-v6)
+IPV4=$(curl -Ss https://www.cloudflare.com/ips-v4/ | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?')
+IPV6=$(curl -Ss https://www.cloudflare.com/ips-v6/ | grep -Eo 's*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?')
 nIPV4FOUND=$(echo $IPV4 | wc -w)
 nIPV6FOUND=$(echo $IPV6 | wc -w)
 
@@ -71,24 +60,16 @@ logput "Beginning overwrite"
 echo -e '# Cloudflare IP addresses\n' > /etc/nginx/real_ip.conf
 
 # Start adding IPs
-nIPV4VALID=0
 for IP in $IPV4; do
-  if [ $(validate_ipv4 $IP) -eq 0 ]; then
-    echo "set_real_ip_from ${IP};" >> /etc/nginx/real_ip.conf
-    let nIPV4VALID+=1
-  fi
+  echo "set_real_ip_from ${IP};" >> /etc/nginx/real_ip.conf
 done
 
-nIPV6VALID=0
 for IP in $IPV6; do
-  if [ $(validate_ipv6 $IP) -eq 0 ]; then
-    echo "set_real_ip_from ${IP};" >> /etc/nginx/real_ip.conf
-    let nIPV6VALID+=1
-  fi
+  echo "set_real_ip_from ${IP};" >> /etc/nginx/real_ip.conf
 done
 
-logput "Wrote out ${nIPV4VALID} ipv4 addresses of ${nIPV4FOUND} candidates"
-logput "Wrote out ${nIPV6VALID} ipv6 addresses of ${nIPV6FOUND} candidates"
+logput "Wrote out ${nIPV4FOUND} ipv4 addresses"
+logput "Wrote out ${nIPV6FOUND} ipv6 addresses"
 
 # Finish with real_ip_header directive
 echo -e '\nreal_ip_header X-Forwarded-For;' >> /etc/nginx/real_ip.conf

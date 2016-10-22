@@ -41,7 +41,7 @@ for opt in "$@"; do
   esac
 done
 
-# Get determine if /etc/nginx/real_ip.conf exists, and get md5 if so
+# Get md5 of /etc/nginx/real_ip.conf if it exists; fake it otherwise
 if [ -f /etc/nginx/real_ip.conf ]; then
   ORIGINAL_MD5=$(/usr/bin/md5sum /etc/nginx/real_ip.conf)
 else

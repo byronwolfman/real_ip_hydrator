@@ -12,6 +12,8 @@ Below the list of Cloudflare IP addresses is the following caveat:
 
 It's unclear what the frequency of "regularly" is, but clearly we need to monitor this list for updates. If we need to monitor this list for updates, then we may as well assign that task to a robot. If the robot is monitoring the list, then it may as well be responsible for updating the nginx configuration too. Here's a script to do just that.
 
+(Alternative, I have also made this available as a facter fact [over here](https://github.com/byronwolfman/real_ip_facter)).
+
 ## How it works
 
 Hopefully the script is easy to parse, but just in case it isn't, here is what it does:
